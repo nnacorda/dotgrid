@@ -46,7 +46,7 @@ export function JournalPage({ panelOpen, onTogglePanel }: JournalPageProps) {
     }
   });
   const setPreview = useCallback((v: boolean | ((prev: boolean) => boolean)) => {
-    setPreviewState((prev) => {
+    setPreviewState((prev: boolean) => {
       const next = typeof v === "function" ? v(prev) : v;
       localStorage.setItem("ui-preview-mode", JSON.stringify(next));
       return next;

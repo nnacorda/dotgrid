@@ -93,6 +93,15 @@ export function setJournalEntry(date: string, text: string): void {
   setItem(`journal-${date}`, text);
 }
 
+// Year Goals
+export function getYearGoals(year: number): string {
+  return getItem(`year-goals-${year}`, "");
+}
+
+export function setYearGoals(year: number, text: string): void {
+  setItem(`year-goals-${year}`, text);
+}
+
 // Todos
 export function getTodos(date: string): Todo[] {
   return getItem(`todos-${date}`, []);
@@ -353,8 +362,8 @@ You're reading this in **preview mode**. Click the **eye icon** (top right) to s
 
 Everything you need lives in the left sidebar:
 
-### Calendar
-Pick any date to view or write that day's entry. Dates with entries show a small **warm dot** beneath the number.
+### Week Strip
+The week calendar shows Mon–Sun with navigation arrows. Pick any date to view or write that day's entry. Dates with entries show a small **dot** beneath the number. The habit grid below follows the same week — navigate and they move together.
 
 ### Habits
 The colored grid below the calendar tracks your habits across the week. Click a square to mark it complete — it fills with the habit's color. Streaks are tracked automatically.
@@ -377,6 +386,17 @@ Click the **panel icon** (top right of the journal) to expand the monthly calend
 
 ---
 
+## Year View — Goals & Lookback
+
+Click the **book icon** in the sidebar header to flip to the year view — like turning to the front pages of a Hobonichi Techo.
+
+- **12-month calendar at a glance** — dots show which days have journal entries
+- **Click any day** to jump straight to that date's journal
+- **Year goals textarea** — write your intentions and reflections for the year (auto-saves per year)
+- Navigate between years with the **arrow buttons**
+
+---
+
 ## Tools in the Journal Header
 
 - **Word count & characters** — always visible
@@ -384,6 +404,7 @@ Click the **panel icon** (top right of the journal) to expand the monthly calend
 - **Magnifying glass** — search across all your past journal entries
 - **Eye icon** — toggle markdown preview
 - **Panel icon** — show/hide the monthly calendar
+- **Book icon** (sidebar) — toggle the year view
 
 ---
 

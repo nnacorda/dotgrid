@@ -1,8 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useDate } from "@/components/date-context";
 import { useTasks } from "@/components/task-context";
+import { TaskDialog } from "@/components/task-dialog";
+import { calculateHabitStreak } from "@/lib/storage";
+import type { Task } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 
 const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
@@ -29,8 +32,24 @@ function fmt(date: Date): string {
 
 export function HabitGrid() {
   const { selectedDate } = useDate();
-  const { getHabitsForDate, getHabitCompletion, toggleHabitCompletion } =
+  const { tasks, updateTask, deleteTask, getHabitsForDate, getHabitCompletion, toggleHabitCompletion, getHabitCompletions } =
     useTasks();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | undefined>();
+
+  const openEditDialog = (habitId: string) => {
+    const task = tasks.find((t) => t.id === habitId);
+    if (task) {
+      setEditingTask(task);
+      setDialogOpen(true);
+    }
+  };
+
+  const handleDialogSave = (data: Partial<Task>) => {
+    if (editingTask) {
+      updateTask(editingTask.id, data);
+    }
+  };
 
   const weekDates = useMemo(() => getWeekDates(selectedDate), [selectedDate]);
   const todayStr = fmt(new Date());
@@ -50,6 +69,21 @@ export function HabitGrid() {
     }
     return result;
   }, [weekDates, getHabitsForDate]);
+
+  const streaks = useMemo(() => {
+    const completions = getHabitCompletions();
+    const map: Record<string, number> = {};
+    for (const habit of habits) {
+      const task = tasks.find((t) => t.id === habit.id);
+      map[habit.id] = calculateHabitStreak(
+        habit.id,
+        completions,
+        task?.recurrence,
+        task?.createdAt
+      );
+    }
+    return map;
+  }, [habits, tasks, getHabitCompletions]);
 
   // For each habit+day, check if the habit is active on that day
   const isHabitActiveOnDate = (habitId: string, dateStr: string): boolean => {
@@ -103,9 +137,13 @@ export function HabitGrid() {
             key={habit.id}
             className="grid grid-cols-[1fr_repeat(7,20px)] gap-1 items-center py-0.5"
           >
-            <span className="truncate text-xs pr-1" title={habit.title}>
+            <button
+              onClick={() => openEditDialog(habit.id)}
+              className="truncate text-xs pr-1 text-left hover:text-primary transition-colors cursor-pointer"
+              title={`Edit ${habit.title}`}
+            >
               {habit.title}
-            </span>
+            </button>
 
             {weekDates.map((date, i) => {
               const dateStr = fmt(date);
@@ -122,25 +160,45 @@ export function HabitGrid() {
                 );
               }
 
+              const streak = streaks[habit.id] || 0;
+              const showStreak = isToday && completed && streak > 1;
+
               return (
                 <button
                   key={i}
                   onClick={() => toggleHabitCompletion(dateStr, habit.id)}
                   className={cn(
-                    "h-[20px] w-[20px] rounded-[3px] transition-colors",
+                    "relative h-[20px] w-[20px] rounded-[3px] transition-colors",
                     isToday && "ring-1 ring-primary/40",
                     completed
                       ? "opacity-100"
                       : "bg-muted/50 hover:bg-muted"
                   )}
                   style={completed ? { backgroundColor: habit.color } : undefined}
-                  title={`${habit.title} — ${date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}`}
-                />
+                  title={`${habit.title} — ${date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}${showStreak ? ` (${streak} day streak)` : ""}`}
+                >
+                  {showStreak && (
+                    <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">
+                      {streak}
+                    </span>
+                  )}
+                </button>
               );
             })}
           </div>
         ))}
       </div>
+
+      {/* Edit habit dialog */}
+      <TaskDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        task={editingTask}
+        onSave={handleDialogSave}
+        onDelete={
+          editingTask ? () => deleteTask(editingTask.id) : undefined
+        }
+      />
     </div>
   );
 }
