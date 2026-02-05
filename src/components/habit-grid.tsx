@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import { useDate } from "@/components/date-context";
 import { useTasks } from "@/components/task-context";
-import { calculateHabitStreak } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 
 const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
@@ -30,7 +29,7 @@ function fmt(date: Date): string {
 
 export function HabitGrid() {
   const { selectedDate } = useDate();
-  const { tasks, getHabitsForDate, getHabitCompletion, toggleHabitCompletion, getHabitCompletions } =
+  const { getHabitsForDate, getHabitCompletion, toggleHabitCompletion } =
     useTasks();
 
   const weekDates = useMemo(() => getWeekDates(selectedDate), [selectedDate]);
@@ -51,21 +50,6 @@ export function HabitGrid() {
     }
     return result;
   }, [weekDates, getHabitsForDate]);
-
-  const streaks = useMemo(() => {
-    const completions = getHabitCompletions();
-    const map: Record<string, number> = {};
-    for (const habit of habits) {
-      const task = tasks.find((t) => t.id === habit.id);
-      map[habit.id] = calculateHabitStreak(
-        habit.id,
-        completions,
-        task?.recurrence,
-        task?.createdAt
-      );
-    }
-    return map;
-  }, [habits, tasks, getHabitCompletions]);
 
   // For each habit+day, check if the habit is active on that day
   const isHabitActiveOnDate = (habitId: string, dateStr: string): boolean => {
@@ -117,7 +101,7 @@ export function HabitGrid() {
         {habits.map((habit) => (
           <div
             key={habit.id}
-            className="group/habit relative grid grid-cols-[1fr_repeat(7,20px)] gap-1 items-center py-0.5"
+            className="grid grid-cols-[1fr_repeat(7,20px)] gap-1 items-center py-0.5"
           >
             <span className="truncate text-xs pr-1" title={habit.title}>
               {habit.title}
@@ -154,11 +138,6 @@ export function HabitGrid() {
                 />
               );
             })}
-            {streaks[habit.id] > 0 && (
-              <span className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-[calc(100%+4px)] text-[10px] whitespace-nowrap opacity-0 group-hover/habit:opacity-80 transition-opacity">
-                {streaks[habit.id]}&#x1F525;
-              </span>
-            )}
           </div>
         ))}
       </div>

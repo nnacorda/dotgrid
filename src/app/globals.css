@@ -241,3 +241,11 @@
 ::-webkit-scrollbar-thumb:hover {
   background: var(--ring);
 }
+
+.scrollbar-on-hover::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+.scrollbar-on-hover:hover::-webkit-scrollbar-thumb {
+  background: var(--border);
+}

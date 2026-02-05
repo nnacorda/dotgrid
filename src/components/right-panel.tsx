@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useRef, useEffect, useState } from "react";
-import { PanelRightClose } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MonthPanel } from "@/components/month-panel";
 
@@ -10,14 +9,18 @@ type RightPanelProps = {
   onClose: () => void;
 };
 
-const DEFAULT_WIDTH = 380;
 const MIN_WIDTH = 300;
 const MAX_WIDTH_RATIO = 0.4; // 40% of viewport
 
 export function RightPanel({ open, onClose }: RightPanelProps) {
-  const [width, setWidth] = useState(DEFAULT_WIDTH);
+  const [width, setWidth] = useState(380);
   const isDragging = useRef(false);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  // Set initial width to max on mount
+  useEffect(() => {
+    setWidth(Math.floor(window.innerWidth * MAX_WIDTH_RATIO));
+  }, []);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -65,16 +68,6 @@ export function RightPanel({ open, onClose }: RightPanelProps) {
         onMouseDown={handleMouseDown}
         className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/20 active:bg-primary/30 z-10"
       />
-
-      {/* Close button */}
-      <div className="shrink-0 flex items-center justify-end px-3 py-2">
-        <button
-          onClick={onClose}
-          className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
-        >
-          <PanelRightClose size={16} />
-        </button>
-      </div>
 
       {/* Calendar */}
       <div className="flex-1 overflow-hidden">

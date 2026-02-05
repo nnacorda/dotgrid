@@ -150,6 +150,29 @@ export function setGanttData(data: GanttData): void {
   setItem("gantt-data", data);
 }
 
+// Journal Settings
+export type JournalSettings = {
+  showWordCount: boolean;
+  showCharCount: boolean;
+  showWritingGoal: boolean;
+  showMarkdownToggle: boolean;
+};
+
+const defaultJournalSettings: JournalSettings = {
+  showWordCount: true,
+  showCharCount: true,
+  showWritingGoal: true,
+  showMarkdownToggle: true,
+};
+
+export function getJournalSettings(): JournalSettings {
+  return { ...defaultJournalSettings, ...getItem("journal-settings", defaultJournalSettings) };
+}
+
+export function setJournalSettings(settings: JournalSettings): void {
+  setItem("journal-settings", settings);
+}
+
 // Writing Goal
 const DEFAULT_WRITING_GOAL = 300;
 

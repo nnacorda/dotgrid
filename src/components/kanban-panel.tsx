@@ -90,7 +90,7 @@ export function KanbanPanel() {
   const getColumnTasks = (status: Status): Task[] => {
     const order = getColumnOrder(status);
     const taskMap = new Map(
-      tasks.filter((t) => t.status === status).map((t) => [t.id, t])
+      tasks.filter((t) => t.status === status && !t.isHabit).map((t) => [t.id, t])
     );
     return order.map((id) => taskMap.get(id)).filter(Boolean) as Task[];
   };
@@ -162,7 +162,7 @@ export function KanbanPanel() {
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex flex-col">
       {/* Quick-add input */}
       <div className="shrink-0 px-3 py-2 flex gap-1.5">
         <input

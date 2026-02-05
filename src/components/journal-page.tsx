@@ -8,9 +8,12 @@ import {
   setJournalEntry,
   getWritingGoal,
   setWritingGoal as persistWritingGoal,
+  getJournalSettings,
+  setJournalSettings,
+  type JournalSettings,
 } from "@/lib/storage";
 import { eventBus, EVENTS } from "@/lib/events";
-import { PanelRight, Eye, Edit3, Search, Target } from "lucide-react";
+import { PanelRight, Eye, Edit3, Search, Target, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SearchDialog } from "@/components/search-dialog";
 import {
@@ -18,6 +21,7 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const ReactMarkdown = dynamic(() => import("react-markdown"), { ssr: false });
 
@@ -35,10 +39,17 @@ export function JournalPage({ panelOpen, onTogglePanel }: JournalPageProps) {
   const [goal, setGoal] = useState(300);
   const [goalInput, setGoalInput] = useState("300");
   const [remarkPlugin, setRemarkPlugin] = useState<any>(null);
+  const [settings, setSettings] = useState<JournalSettings>({
+    showWordCount: true,
+    showCharCount: true,
+    showWritingGoal: true,
+    showMarkdownToggle: true,
+  });
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Load writing goal
+  // Load settings and writing goal
   useEffect(() => {
+    setSettings(getJournalSettings());
     const g = getWritingGoal();
     setGoal(g);
     setGoalInput(String(g));
@@ -101,17 +112,23 @@ export function JournalPage({ panelOpen, onTogglePanel }: JournalPageProps) {
     }
   };
 
+  const toggleSetting = (key: keyof JournalSettings) => {
+    const next = { ...settings, [key]: !settings[key] };
+    setSettings(next);
+    setJournalSettings(next);
+  };
+
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border px-8 py-3">
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
-          <span>{wordCount} words</span>
-          <span>{charCount} characters</span>
+          {settings.showWordCount && <span>{wordCount} words</span>}
+          {settings.showCharCount && <span>{charCount} characters</span>}
           <span>{saved ? "Saved" : "Saving..."}</span>
 
           {/* Writing goal progress */}
-          <Popover>
+          {settings.showWritingGoal && <Popover>
             <PopoverTrigger asChild>
               <button
                 className="flex items-center gap-1.5 rounded-md px-1.5 py-0.5 hover:bg-accent transition-colors"
@@ -181,7 +198,7 @@ export function JournalPage({ panelOpen, onTogglePanel }: JournalPageProps) {
                 />
               </div>
             </PopoverContent>
-          </Popover>
+          </Popover>}
         </div>
 
         <div className="flex items-center gap-1">
@@ -195,16 +212,50 @@ export function JournalPage({ panelOpen, onTogglePanel }: JournalPageProps) {
           </button>
 
           {/* Preview toggle */}
-          <button
-            onClick={() => setPreview((p) => !p)}
-            className={cn(
-              "rounded-md p-1.5 hover:bg-accent transition-colors",
-              preview && "text-primary"
-            )}
-            title={preview ? "Edit mode" : "Preview markdown"}
-          >
-            {preview ? <Edit3 size={18} /> : <Eye size={18} />}
-          </button>
+          {settings.showMarkdownToggle && (
+            <button
+              onClick={() => setPreview((p) => !p)}
+              className={cn(
+                "rounded-md p-1.5 hover:bg-accent transition-colors",
+                preview && "text-primary"
+              )}
+              title={preview ? "Edit mode" : "Preview markdown"}
+            >
+              {preview ? <Edit3 size={18} /> : <Eye size={18} />}
+            </button>
+          )}
+
+          {/* Settings */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                className="rounded-md p-1.5 hover:bg-accent transition-colors"
+                title="Toolbar settings"
+              >
+                <Settings size={18} />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 space-y-1 p-3" align="end">
+              <p className="text-xs text-muted-foreground mb-2">Toolbar</p>
+              {([
+                ["showWordCount", "Word count"],
+                ["showCharCount", "Character count"],
+                ["showWritingGoal", "Writing goal"],
+                ["showMarkdownToggle", "Markdown preview"],
+              ] as const).map(([key, label]) => (
+                <label
+                  key={key}
+                  className="flex items-center gap-2 rounded-md px-1.5 py-1 hover:bg-foreground/5 cursor-pointer transition-colors"
+                >
+                  <Checkbox
+                    checked={settings[key]}
+                    onCheckedChange={() => toggleSetting(key)}
+                  />
+                  <span className="text-xs text-foreground/80">{label}</span>
+                </label>
+              ))}
+            </PopoverContent>
+          </Popover>
 
           {/* Panel toggle */}
           <button

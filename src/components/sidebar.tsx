@@ -44,7 +44,7 @@ export function Sidebar() {
       </div>
 
       {/* Scrollable middle area */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto scrollbar-on-hover">
         {/* Date Display */}
         <div className="border-b border-border px-4 py-3">
           <p className="text-xs uppercase tracking-widest text-muted-foreground">
