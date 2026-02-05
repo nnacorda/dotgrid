@@ -246,7 +246,9 @@ export function Sidebar() {
               {/* Weather & Moon */}
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 {weather && WeatherIcon && (
-                  <WeatherIcon size={13} title={getWeatherDescription(weather.weatherCode)} />
+                  <span title={getWeatherDescription(weather.weatherCode)}>
+                    <WeatherIcon size={13} />
+                  </span>
                 )}
                 <MoonPhaseIcon phase={moonPhase.index} size={12} title={moonPhase.name} />
               </div>
