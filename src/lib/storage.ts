@@ -322,6 +322,80 @@ export function downloadExport(): void {
   URL.revokeObjectURL(url);
 }
 
+// New User Detection & Welcome
+export function isNewUser(): boolean {
+  if (typeof window === "undefined") return false;
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key?.startsWith("journal-")) {
+      const content = getJournalEntry(key.substring(8));
+      if (content.trim().length > 0) return false;
+    }
+  }
+  return true;
+}
+
+export const WELCOME_CONTENT = `# Welcome to dotgrid
+
+A minimal journal and planner — inspired by Hobonichi Techo paper.
+
+---
+
+## Writing
+
+This is your journal. Just start typing — your work **auto-saves** as you write. Each day gets its own page, and you can navigate dates using the calendar in the sidebar.
+
+You're reading this in **preview mode**. Click the **eye icon** (top right) to switch to edit mode and see the raw markdown. dotgrid supports full markdown: **bold**, *italic*, lists, headings, code blocks, links, and more.
+
+---
+
+## Sidebar — Your Daily Dashboard
+
+Everything you need lives in the left sidebar:
+
+### Calendar
+Pick any date to view or write that day's entry. Dates with entries show a small **warm dot** beneath the number.
+
+### Habits
+The colored grid below the calendar tracks your habits across the week. Click a square to mark it complete — it fills with the habit's color. Streaks are tracked automatically.
+
+To add a habit, use the **+ button** in the task input and create a task with the **"Recurring habit"** toggle enabled.
+
+### Tasks
+The kanban board at the bottom organizes your tasks into **To Do**, **In Progress**, and **Done**.
+
+- **Quick-add**: Type in the input field and press **Enter**
+- **Detailed task**: Click the **+** button for full options (priority, dates, color)
+- **Reorder**: Drag cards anywhere within or between columns
+- **Complete**: Double-click a card to mark it done (double-click again to undo)
+
+---
+
+## Right Panel — Monthly Calendar
+
+Click the **panel icon** (top right of the journal) to expand the monthly calendar view. Tasks appear as colored bars on their due dates — like Outlook. You can drag the left edge to resize it.
+
+---
+
+## Tools in the Journal Header
+
+- **Word count & characters** — always visible
+- **Target icon** — set a daily writing goal; the progress bar fills as you write
+- **Magnifying glass** — search across all your past journal entries
+- **Eye icon** — toggle markdown preview
+- **Panel icon** — show/hide the monthly calendar
+
+---
+
+## Your Data
+
+Everything is stored **locally in your browser**. No accounts, no servers, no tracking. Use the **download icon** in the sidebar footer to export a backup anytime.
+
+---
+
+*This entry is yours to keep, edit, or delete. Happy journaling.*
+`;
+
 // Utility
 export function formatDate(date: Date): string {
   return date.toISOString().split("T")[0];

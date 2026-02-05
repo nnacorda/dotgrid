@@ -37,8 +37,8 @@ export function Sidebar() {
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between px-4 py-7">
         <div>
-          <h1 className="text-lg font-semibold tracking-tight">Hobonichi</h1>
-          <p className="text-xs text-muted-foreground">Digital Journal</p>
+          <h1 className="text-xl font-medium tracking-tight" style={{ fontFamily: "var(--font-playfair)" }}>dotgrid</h1>
+          <p className="text-xs text-muted-foreground">one day, one page</p>
         </div>
         <ThemeToggle />
       </div>
@@ -77,7 +77,7 @@ export function Sidebar() {
 
       {/* Footer */}
       <div className="shrink-0 border-t border-border px-4 py-3 flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">one day, one page</p>
+        <p className="text-xs text-muted-foreground">journal + planner</p>
         <Button
           onClick={downloadExport}
           size="sm"

@@ -10,6 +10,8 @@ import {
   setWritingGoal as persistWritingGoal,
   getJournalSettings,
   setJournalSettings,
+  isNewUser,
+  WELCOME_CONTENT,
   type JournalSettings,
 } from "@/lib/storage";
 import { eventBus, EVENTS } from "@/lib/events";
@@ -60,11 +62,18 @@ export function JournalPage({ panelOpen, onTogglePanel }: JournalPageProps) {
     import("remark-gfm").then((mod) => setRemarkPlugin(() => mod.default));
   }, []);
 
-  // Load entry when date changes
+  // Load entry when date changes (seed welcome content for new users)
   useEffect(() => {
-    setText(getJournalEntry(dateString));
+    const entry = getJournalEntry(dateString);
+    if (!entry && isNewUser()) {
+      setText(WELCOME_CONTENT);
+      setJournalEntry(dateString, WELCOME_CONTENT);
+      setPreview(true);
+    } else {
+      setText(entry);
+      setPreview(false);
+    }
     setSaved(true);
-    setPreview(false);
   }, [dateString]);
 
   // Auto-save with debounce
