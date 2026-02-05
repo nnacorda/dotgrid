@@ -77,7 +77,7 @@ export function Sidebar() {
 
       {/* Footer */}
       <div className="shrink-0 border-t border-border px-4 py-3 flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">journal + planner</p>
+        <p className="text-xs text-muted-foreground">journal + planner by nnacorda</p>
         <Button
           onClick={downloadExport}
           size="sm"

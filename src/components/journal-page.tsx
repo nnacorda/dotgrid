@@ -36,7 +36,22 @@ export function JournalPage({ panelOpen, onTogglePanel }: JournalPageProps) {
   const { dateString } = useDate();
   const [text, setText] = useState("");
   const [saved, setSaved] = useState(true);
-  const [preview, setPreview] = useState(false);
+  const [preview, setPreviewState] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const saved = localStorage.getItem("ui-preview-mode");
+      return saved ? JSON.parse(saved) : false;
+    } catch {
+      return false;
+    }
+  });
+  const setPreview = useCallback((v: boolean | ((prev: boolean) => boolean)) => {
+    setPreviewState((prev) => {
+      const next = typeof v === "function" ? v(prev) : v;
+      localStorage.setItem("ui-preview-mode", JSON.stringify(next));
+      return next;
+    });
+  }, []);
   const [searchOpen, setSearchOpen] = useState(false);
   const [goal, setGoal] = useState(300);
   const [goalInput, setGoalInput] = useState("300");
@@ -62,17 +77,21 @@ export function JournalPage({ panelOpen, onTogglePanel }: JournalPageProps) {
     import("remark-gfm").then((mod) => setRemarkPlugin(() => mod.default));
   }, []);
 
-  // Load entry when date changes (seed welcome content for new users)
+  // Seed welcome content for new users on first mount
+  const seededRef = useRef(false);
   useEffect(() => {
-    const entry = getJournalEntry(dateString);
-    if (!entry && isNewUser()) {
+    if (!seededRef.current && isNewUser()) {
+      seededRef.current = true;
       setText(WELCOME_CONTENT);
       setJournalEntry(dateString, WELCOME_CONTENT);
       setPreview(true);
-    } else {
-      setText(entry);
-      setPreview(false);
+      setSaved(true);
     }
+  }, []);
+
+  // Load entry when date changes
+  useEffect(() => {
+    setText(getJournalEntry(dateString));
     setSaved(true);
   }, [dateString]);
 

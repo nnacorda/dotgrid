@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { DateProvider } from "@/components/date-context";
 import { TaskProvider } from "@/components/task-context";
 import { Sidebar } from "@/components/sidebar";
@@ -10,7 +10,19 @@ import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { KeyboardShortcutsHelp } from "@/components/keyboard-shortcuts-help";
 
 export default function Home() {
-  const [panelOpen, setPanelOpen] = useState(true);
+  const [panelOpen, setPanelOpen] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const saved = localStorage.getItem("panel-open");
+      return saved ? JSON.parse(saved) : false;
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem("panel-open", JSON.stringify(panelOpen));
+  }, [panelOpen]);
   const [helpOpen, setHelpOpen] = useState(false);
 
   useKeyboardShortcuts({

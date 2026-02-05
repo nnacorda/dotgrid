@@ -329,7 +329,7 @@ export function isNewUser(): boolean {
     const key = localStorage.key(i);
     if (key?.startsWith("journal-")) {
       const content = getJournalEntry(key.substring(8));
-      if (content.trim().length > 0) return false;
+      if (typeof content === "string" && content.trim().length > 0) return false;
     }
   }
   return true;
@@ -387,6 +387,34 @@ Click the **panel icon** (top right of the journal) to expand the monthly calend
 
 ---
 
+## Markdown Cheat Sheet
+
+dotgrid uses markdown for formatting. Here's a quick reference:
+
+| What you type | What you get |
+|---|---|
+| \`**bold**\` | **bold** |
+| \`*italic*\` | *italic* |
+| \`# Heading 1\` | Large heading |
+| \`## Heading 2\` | Medium heading |
+| \`### Heading 3\` | Small heading |
+| \`- item\` | Bullet list |
+| \`1. item\` | Numbered list |
+| \`[text](url)\` | A link |
+| \`> quote\` | A blockquote |
+| \`---\` | Horizontal line |
+| \`\\\`code\\\`\` | Inline \`code\` |
+
+For a code block, wrap text in triple backticks:
+
+\`\`\`
+like this
+\`\`\`
+
+> **Tip:** Write in edit mode, then click the **eye icon** to see it rendered. You'll pick it up in no time.
+
+---
+
 ## Your Data
 
 Everything is stored **locally in your browser**. No accounts, no servers, no tracking. Use the **download icon** in the sidebar footer to export a backup anytime.
@@ -394,6 +422,8 @@ Everything is stored **locally in your browser**. No accounts, no servers, no tr
 ---
 
 *This entry is yours to keep, edit, or delete. Happy journaling.*
+
+*Made with love — Nathan*
 `;
 
 // Utility
