@@ -6,8 +6,10 @@ import {
   getJournalEntryDates,
   getYearGoals,
   setYearGoals,
+  getMood,
+  type Mood,
 } from "@/lib/storage";
-import { ChevronLeft, ChevronRight, PanelRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // --- Helpers ---
@@ -52,12 +54,19 @@ const MONTH_NAMES = [
 
 const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
 
+const MOOD_BG: Record<string, string> = {
+  good: "rgba(134, 187, 106, 0.3)",
+  neutral: "rgba(234, 197, 80, 0.3)",
+  bad: "rgba(214, 120, 80, 0.3)",
+};
+
 // --- MiniMonth ---
 
 function MiniMonth({
   year,
   month,
   journalDateSet,
+  moodMap,
   onSelectDate,
   selectedStr,
   todayStr,
@@ -65,6 +74,7 @@ function MiniMonth({
   year: number;
   month: number;
   journalDateSet: Set<string>;
+  moodMap: Record<string, Mood>;
   onSelectDate: (date: Date) => void;
   selectedStr: string;
   todayStr: string;
@@ -94,6 +104,7 @@ function MiniMonth({
           const isToday = dateStr === todayStr;
           const isSelected = dateStr === selectedStr;
           const hasEntry = journalDateSet.has(dateStr);
+          const moodBg = moodMap[dateStr] ? MOOD_BG[moodMap[dateStr]!] : undefined;
 
           return (
             <button
@@ -107,6 +118,7 @@ function MiniMonth({
                     ? "bg-accent text-accent-foreground font-medium"
                     : "hover:bg-accent/50"
               )}
+              style={moodBg && !isSelected && !isToday ? { backgroundColor: moodBg } : undefined}
             >
               {date.getDate()}
               {hasEntry && (
@@ -125,34 +137,36 @@ function MiniMonth({
   );
 }
 
-// --- YearView ---
+// --- YearPanel ---
 
-type YearViewProps = {
-  panelOpen: boolean;
-  onTogglePanel: () => void;
-  onNavigateToDate: () => void;
-};
-
-export function YearView({
-  panelOpen,
-  onTogglePanel,
-  onNavigateToDate,
-}: YearViewProps) {
+export function YearPanel() {
   const { selectedDate, setSelectedDate } = useDate();
   const [viewYear, setViewYear] = useState(selectedDate.getFullYear());
   const [goals, setGoals] = useState("");
   const [goalsSaved, setGoalsSaved] = useState(true);
   const [journalDateSet, setJournalDateSet] = useState<Set<string>>(new Set());
+  const [moodMap, setMoodMap] = useState<Record<string, Mood>>({});
   const goalsTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const todayStr = fmt(new Date());
   const selectedStr = fmt(selectedDate);
 
-  // Load journal dates for viewYear
+  // Load journal dates and moods for viewYear
   useEffect(() => {
     const allDates = getJournalEntryDates();
     const yearPrefix = String(viewYear);
     setJournalDateSet(new Set(allDates.filter((d) => d.startsWith(yearPrefix))));
+
+    const moods: Record<string, Mood> = {};
+    for (let m = 0; m < 12; m++) {
+      const lastDay = new Date(viewYear, m + 1, 0).getDate();
+      for (let d = 1; d <= lastDay; d++) {
+        const dateStr = fmt(new Date(viewYear, m, d));
+        const mood = getMood(dateStr);
+        if (mood) moods[dateStr] = mood;
+      }
+    }
+    setMoodMap(moods);
   }, [viewYear]);
 
   // Load goals when year changes
@@ -184,70 +198,58 @@ export function YearView({
   const handleSelectDate = useCallback(
     (date: Date) => {
       setSelectedDate(date);
-      onNavigateToDate();
     },
-    [setSelectedDate, onNavigateToDate]
+    [setSelectedDate]
   );
 
   const currentYear = new Date().getFullYear();
 
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-border px-8 py-3">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setViewYear((y) => y - 1)}
-            className="rounded-md p-1 hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
-          >
-            <ChevronLeft size={16} />
-          </button>
-          <h2
-            className="text-xl font-medium tabular-nums"
+      {/* Year navigation */}
+      <div className="shrink-0 flex items-center justify-between px-3 py-2 border-b border-border">
+        <button
+          onClick={() => setViewYear((y) => y - 1)}
+          className="rounded-md p-1 hover:bg-accent"
+        >
+          <ChevronLeft size={14} />
+        </button>
+        <div className="flex items-center gap-2">
+          <span
+            className="text-sm font-medium"
             style={{ fontFamily: "var(--font-playfair)" }}
           >
             {viewYear}
-          </h2>
-          <button
-            onClick={() => setViewYear((y) => y + 1)}
-            className="rounded-md p-1 hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
-          >
-            <ChevronRight size={16} />
-          </button>
+          </span>
           {viewYear !== currentYear && (
             <button
               onClick={() => setViewYear(currentYear)}
-              className="rounded px-2 py-0.5 text-xs text-muted-foreground hover:bg-accent transition-colors"
+              className="rounded px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-accent"
             >
               This year
             </button>
           )}
         </div>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={onTogglePanel}
-            className={cn(
-              "rounded-md p-1.5 hover:bg-accent transition-colors",
-              panelOpen && "text-primary"
-            )}
-            title={panelOpen ? "Close panel" : "Open panel"}
-          >
-            <PanelRight size={18} />
-          </button>
-        </div>
+        <button
+          onClick={() => setViewYear((y) => y + 1)}
+          className="rounded-md p-1 hover:bg-accent"
+        >
+          <ChevronRight size={14} />
+        </button>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto scrollbar-on-hover">
-        <div className="mx-auto max-w-3xl px-8 py-8">
+        <div className="px-3 py-4">
           {/* 12 mini-month grids */}
-          <div className="grid grid-cols-3 gap-x-8 gap-y-6 md:grid-cols-4">
+          <div className="grid grid-cols-3 gap-x-4 gap-y-5">
             {Array.from({ length: 12 }, (_, monthIdx) => (
               <MiniMonth
                 key={monthIdx}
                 year={viewYear}
                 month={monthIdx}
                 journalDateSet={journalDateSet}
+                moodMap={moodMap}
                 onSelectDate={handleSelectDate}
                 selectedStr={selectedStr}
                 todayStr={todayStr}
@@ -256,17 +258,17 @@ export function YearView({
           </div>
 
           {/* Year goals */}
-          <div className="mt-10 border-t border-border pt-6">
-            <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          <div className="mt-6 border-t border-border pt-4">
+            <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Year Goals & Reflections
             </h3>
             <textarea
               value={goals}
               onChange={(e) => handleGoalsChange(e.target.value)}
               placeholder="What do you want to accomplish this year?"
-              className="min-h-[120px] w-full resize-y rounded-lg border border-border bg-transparent px-4 py-3 text-sm leading-relaxed placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring"
+              className="min-h-[100px] w-full resize-y rounded-lg border border-border bg-transparent px-3 py-2.5 text-sm leading-relaxed placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring"
             />
-            <p className="mt-1.5 text-xs text-muted-foreground">
+            <p className="mt-1 text-xs text-muted-foreground">
               {goalsSaved ? "Saved" : "Saving..."}
             </p>
           </div>

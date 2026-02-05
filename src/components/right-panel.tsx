@@ -3,6 +3,8 @@
 import { useCallback, useRef, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { MonthPanel } from "@/components/month-panel";
+import { YearPanel } from "@/components/year-view";
+import { StatsPanel } from "@/components/stats-panel";
 
 type RightPanelProps = {
   open: boolean;
@@ -12,8 +14,11 @@ type RightPanelProps = {
 const MIN_WIDTH = 300;
 const MAX_WIDTH_RATIO = 0.4; // 40% of viewport
 
+type PanelView = "month" | "year" | "stats";
+
 export function RightPanel({ open, onClose }: RightPanelProps) {
   const [width, setWidth] = useState(380);
+  const [view, setView] = useState<PanelView>("month");
   const isDragging = useRef(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -69,9 +74,27 @@ export function RightPanel({ open, onClose }: RightPanelProps) {
         className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/20 active:bg-primary/30 z-10"
       />
 
-      {/* Calendar */}
+      {/* View toggle */}
+      <div className="shrink-0 flex items-center justify-center gap-1 px-3 py-1.5 border-b border-border">
+        {(["month", "year", "stats"] as const).map((v) => (
+          <button
+            key={v}
+            onClick={() => setView(v)}
+            className={cn(
+              "rounded-md px-3 py-1 text-xs font-medium transition-colors",
+              view === v
+                ? "bg-accent text-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+            )}
+          >
+            {v === "month" ? "Month" : v === "year" ? "Year" : "Insights"}
+          </button>
+        ))}
+      </div>
+
+      {/* Panel content */}
       <div className="flex-1 overflow-hidden">
-        <MonthPanel />
+        {view === "month" ? <MonthPanel /> : view === "year" ? <YearPanel /> : <StatsPanel />}
       </div>
     </div>
   );

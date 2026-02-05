@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDate } from "@/components/date-context";
 import { useTasks } from "@/components/task-context";
+import { getMood, type Mood } from "@/lib/storage";
 import type { Task } from "@/lib/storage";
 
 // --- Helpers ---
@@ -62,6 +63,12 @@ function addMonths(date: Date, n: number): Date {
 
 const WEEKDAY_SHORT = ["M", "T", "W", "T", "F", "S", "S"];
 
+const MOOD_BG: Record<string, string> = {
+  good: "rgba(134, 187, 106, 0.2)",
+  neutral: "rgba(234, 197, 80, 0.2)",
+  bad: "rgba(214, 120, 80, 0.2)",
+};
+
 // --- MonthPanel ---
 
 export function MonthPanel() {
@@ -70,9 +77,24 @@ export function MonthPanel() {
 
   const [viewDate, setViewDate] = useState<Date>(selectedDate);
   const monthGrid = useMemo(() => getMonthGrid(viewDate), [viewDate]);
+  const [moods, setMoods] = useState<Record<string, Mood>>({});
 
   const todayStr = fmt(new Date());
   const selectedStr = fmt(selectedDate);
+
+  // Load moods for the visible month
+  useEffect(() => {
+    const year = viewDate.getFullYear();
+    const month = viewDate.getMonth();
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const map: Record<string, Mood> = {};
+    for (let d = 1; d <= lastDay; d++) {
+      const dateStr = fmt(new Date(year, month, d));
+      const m = getMood(dateStr);
+      if (m) map[dateStr] = m;
+    }
+    setMoods(map);
+  }, [viewDate, selectedDate]);
 
   const handlePrev = () => setViewDate((d) => addMonths(d, -1));
   const handleNext = () => setViewDate((d) => addMonths(d, 1));
@@ -98,7 +120,7 @@ export function MonthPanel() {
           <ChevronLeft size={14} />
         </button>
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium">{monthLabel}</span>
+          <span className="text-sm font-medium" style={{ fontFamily: "var(--font-playfair)" }}>{monthLabel}</span>
           <button
             onClick={handleToday}
             className="rounded px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-accent"
@@ -154,6 +176,8 @@ export function MonthPanel() {
           const visibleTasks = dayTasks.slice(0, maxTasks);
           const taskOverflow = dayTasks.length - maxTasks;
 
+          const moodBg = moods[dateStr] ? MOOD_BG[moods[dateStr]!] : undefined;
+
           return (
             <button
               key={dateStr}
@@ -162,6 +186,7 @@ export function MonthPanel() {
                 "flex flex-col items-start border-b border-r border-border py-1 px-0.5 hover:bg-accent/30 transition-colors overflow-hidden",
                 isSelected && "bg-accent/30"
               )}
+              style={moodBg && !isSelected ? { backgroundColor: moodBg } : undefined}
             >
               <span
                 className={cn(
@@ -196,10 +221,10 @@ export function MonthPanel() {
                     <div
                       key={task.id}
                       className={cn(
-                        "truncate rounded px-1.5 py-0.5 text-xs leading-normal text-white font-medium",
+                        "truncate rounded px-1.5 py-0.5 text-xs leading-normal font-medium",
                         task.completed && "opacity-50 line-through"
                       )}
-                      style={{ backgroundColor: task.color }}
+                      style={{ backgroundColor: `color-mix(in srgb, ${task.color} 25%, transparent)`, color: "var(--foreground)" }}
                       title={task.title}
                     >
                       {task.title}

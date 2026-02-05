@@ -10,12 +10,14 @@ import {
   setWritingGoal as persistWritingGoal,
   getJournalSettings,
   setJournalSettings,
+  getJournalTemplate,
+  setJournalTemplate as persistTemplate,
   isNewUser,
   WELCOME_CONTENT,
   type JournalSettings,
 } from "@/lib/storage";
 import { eventBus, EVENTS } from "@/lib/events";
-import { PanelRight, Eye, Edit3, Search, Target, Settings } from "lucide-react";
+import { PanelRight, Eye, Edit3, Search, Target, Settings, NotebookPen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SearchDialog } from "@/components/search-dialog";
 import {
@@ -62,14 +64,17 @@ export function JournalPage({ panelOpen, onTogglePanel }: JournalPageProps) {
     showWritingGoal: true,
     showMarkdownToggle: true,
   });
+  const [template, setTemplate] = useState("");
+  const [templateOpen, setTemplateOpen] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Load settings and writing goal
+  // Load settings, writing goal, and template
   useEffect(() => {
     setSettings(getJournalSettings());
     const g = getWritingGoal();
     setGoal(g);
     setGoalInput(String(g));
+    setTemplate(getJournalTemplate());
   }, []);
 
   // Load remark-gfm plugin once
@@ -145,6 +150,17 @@ export function JournalPage({ panelOpen, onTogglePanel }: JournalPageProps) {
     setSettings(next);
     setJournalSettings(next);
   };
+
+  const applyTemplate = useCallback(() => {
+    if (template) {
+      handleChange(template);
+    }
+  }, [template, handleChange]);
+
+  const handleTemplateSave = useCallback((value: string) => {
+    setTemplate(value);
+    persistTemplate(value);
+  }, []);
 
   return (
     <div className="flex h-full flex-col">
@@ -230,6 +246,30 @@ export function JournalPage({ panelOpen, onTogglePanel }: JournalPageProps) {
         </div>
 
         <div className="flex items-center gap-1">
+          {/* Template editor */}
+          <Popover open={templateOpen} onOpenChange={setTemplateOpen}>
+            <PopoverTrigger asChild>
+              <button
+                className="rounded-md p-1.5 hover:bg-accent transition-colors"
+                title="Daily template"
+              >
+                <NotebookPen size={18} />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 space-y-2 p-3" align="end">
+              <p className="text-xs font-medium text-muted-foreground">Daily Template</p>
+              <textarea
+                value={template}
+                onChange={(e) => handleTemplateSave(e.target.value)}
+                placeholder="Write your daily template (markdown supported)..."
+                className="min-h-[120px] w-full resize-y rounded-md border border-border bg-transparent px-2.5 py-2 text-xs leading-relaxed placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+              <p className="text-[10px] text-muted-foreground">
+                Applied to empty journal pages via the &quot;Use template&quot; button.
+              </p>
+            </PopoverContent>
+          </Popover>
+
           {/* Search button */}
           <button
             onClick={() => setSearchOpen(true)}
@@ -312,13 +352,25 @@ export function JournalPage({ panelOpen, onTogglePanel }: JournalPageProps) {
             )}
           </div>
         ) : (
-          <textarea
-            value={text}
-            onChange={(e) => handleChange(e.target.value)}
-            placeholder="Start writing..."
-            className="h-full w-full resize-none bg-transparent px-8 py-6 text-base leading-[24px] placeholder:text-muted-foreground/40 focus:outline-none"
-            style={{ lineHeight: "24px" }}
-          />
+          <div className="relative h-full">
+            <textarea
+              value={text}
+              onChange={(e) => handleChange(e.target.value)}
+              placeholder="Start writing..."
+              className="h-full w-full resize-none bg-transparent px-8 py-6 text-base leading-[24px] placeholder:text-muted-foreground/40 focus:outline-none"
+              style={{ lineHeight: "24px" }}
+            />
+            {!text && template && (
+              <div className="pointer-events-none absolute inset-0 px-8 py-6">
+                <button
+                  onClick={applyTemplate}
+                  className="pointer-events-auto mt-7 text-xs text-primary/60 hover:text-primary transition-colors"
+                >
+                  or use daily template
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </div>
 

@@ -93,6 +93,17 @@ export function setJournalEntry(date: string, text: string): void {
   setItem(`journal-${date}`, text);
 }
 
+// Mood
+export type Mood = "good" | "neutral" | "bad" | null;
+
+export function getMood(date: string): Mood {
+  return getItem<Mood>(`mood-${date}`, null);
+}
+
+export function setMood(date: string, mood: Mood): void {
+  setItem(`mood-${date}`, mood);
+}
+
 // Year Goals
 export function getYearGoals(year: number): string {
   return getItem(`year-goals-${year}`, "");
@@ -288,6 +299,25 @@ export function calculateHabitStreak(
   return streak;
 }
 
+// Journal Template
+const DEFAULT_TEMPLATE = `## Gratitude
+-
+
+## Today's Focus
+-
+
+## Reflections
+
+`;
+
+export function getJournalTemplate(): string {
+  return getItem("journal-template", DEFAULT_TEMPLATE);
+}
+
+export function setJournalTemplate(template: string): void {
+  setItem("journal-template", template);
+}
+
 // Export / Backup
 export type ExportData = {
   version: string;
@@ -296,25 +326,63 @@ export type ExportData = {
   tasks: TaskStore;
   writingGoal: number;
   theme: string;
+  moods?: { [date: string]: Mood };
+  yearGoals?: { [year: string]: string };
 };
 
 export function exportAllData(): ExportData {
   const journals: { [date: string]: string } = {};
+  const moods: { [date: string]: Mood } = {};
+  const yearGoals: { [year: string]: string } = {};
+
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (key?.startsWith("journal-")) {
       const dateStr = key.substring(8);
       journals[dateStr] = getJournalEntry(dateStr);
+    } else if (key?.startsWith("mood-")) {
+      const dateStr = key.substring(5);
+      const m = getMood(dateStr);
+      if (m) moods[dateStr] = m;
+    } else if (key?.startsWith("year-goals-")) {
+      const year = key.substring(11);
+      const text = getYearGoals(parseInt(year));
+      if (text) yearGoals[year] = text;
     }
   }
+
   return {
-    version: "1.0.0",
+    version: "1.1.0",
     exportDate: new Date().toISOString(),
     journals,
     tasks: getTaskStore(),
     writingGoal: getWritingGoal(),
     theme: getItem("theme", "light"),
+    moods,
+    yearGoals,
   };
+}
+
+// Import / Restore
+export function importBackup(data: ExportData): number {
+  let count = 0;
+  for (const [date, content] of Object.entries(data.journals || {})) {
+    setJournalEntry(date, content);
+    count++;
+  }
+  if (data.tasks) setTaskStore(data.tasks);
+  if (data.writingGoal) setWritingGoal(data.writingGoal);
+  if (data.moods) {
+    for (const [date, m] of Object.entries(data.moods)) {
+      setMood(date, m as Mood);
+    }
+  }
+  if (data.yearGoals) {
+    for (const [year, text] of Object.entries(data.yearGoals)) {
+      setYearGoals(parseInt(year), text);
+    }
+  }
+  return count;
 }
 
 export function downloadExport(): void {
@@ -388,7 +456,7 @@ Click the **panel icon** (top right of the journal) to expand the monthly calend
 
 ## Year View — Goals & Lookback
 
-Click the **book icon** in the sidebar header to flip to the year view — like turning to the front pages of a Hobonichi Techo.
+In the right panel, click the **Year** toggle to switch from the monthly calendar to the year view — like turning to the front pages of a Hobonichi Techo.
 
 - **12-month calendar at a glance** — dots show which days have journal entries
 - **Click any day** to jump straight to that date's journal
@@ -403,8 +471,7 @@ Click the **book icon** in the sidebar header to flip to the year view — like 
 - **Target icon** — set a daily writing goal; the progress bar fills as you write
 - **Magnifying glass** — search across all your past journal entries
 - **Eye icon** — toggle markdown preview
-- **Panel icon** — show/hide the monthly calendar
-- **Book icon** (sidebar) — toggle the year view
+- **Panel icon** — show/hide the right panel (monthly calendar & year view)
 
 ---
 
